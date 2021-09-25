@@ -63,7 +63,7 @@ class _SideBarState extends State<SideBar> {
     return AnimatedContainer(
       decoration: BoxDecoration(border: Border(right: BorderSide(color:Colors.black12))),
       duration: Duration(milliseconds: 150),
-      width: opened?200:60,
+      width: opened?200:70,
       padding: EdgeInsets.all(10.0),
       child: Column(
         children: [

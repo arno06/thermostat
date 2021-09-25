@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class ToggleSwitch extends StatefulWidget {
-  const ToggleSwitch({Key? key, required this.values, required this.width, this.height = 30, this.borderSize=2, this.disabled = false, this.onSwitch}) : super(key: key);
+  const ToggleSwitch({Key? key, required this.values, required this.width, this.height = 30, this.borderSize=2, this.disabled = false, this.onSwitch, this.value=0}) : super(key: key);
 
   final List<String> values;
 
@@ -14,6 +14,8 @@ class ToggleSwitch extends StatefulWidget {
   final bool disabled;
 
   final Function? onSwitch;
+
+  final int value;
 
   @override
   _ToggleSwitchState createState() => _ToggleSwitchState();
