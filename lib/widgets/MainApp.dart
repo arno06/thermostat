@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -256,6 +257,7 @@ class _MainAppState extends State<MainApp> {
             Container(width:20),
             ToggleSwitch(values: ['On', 'Off'], value:this.state, width: 125, height:35, disabled: this.disabled, onSwitch: (index, val){
               this.state = index;
+              runRelayCommand([this.state==1?"off":"on"]);
             },),
           ],
         ),
@@ -294,6 +296,17 @@ class _MainAppState extends State<MainApp> {
   void _generateImageUrl(){
     setState((){
       _imageUrl = 'https://source.unsplash.com/random/'+_dimensions+'?city,weather&'+DateTime.now().millisecondsSinceEpoch.toString();
+    });
+  }
+
+  Future<ProcessResult> runRelayCommand(List<String> parameters){
+    List<String> params = ['/home/arno/relay.py'];
+    params.addAll(parameters);
+    return Process.run('/usr/bin/python3', params).then((ProcessResult results){
+      if(results.exitCode != 0){
+
+      }
+      return results;
     });
   }
 }
