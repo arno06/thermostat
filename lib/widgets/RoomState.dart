@@ -39,8 +39,8 @@ class RoomState extends StatelessWidget {
   Widget build(BuildContext context) {
     Color color = room == "SALON" ? Colors.teal: Colors.blue;
     return Container(
-        width:280,
-        height:280,
+        width:240,
+        height:240,
         decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(10.0),
             color:Colors.white.withOpacity(0.8),

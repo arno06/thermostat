@@ -29,6 +29,12 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.2
   http: ^0.13.3
+  window_size:
+    git:
+      url: git://github.com/google/flutter-desktop-embedding.git
+      path: plugins/window_size
+      ref: e48abe7c3e9ebfe0b81622167c5201d4e783bb81
+  desktop_window: ^0.4.0
 
 dev_dependencies:
   flutter_test:

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:desktop_window/desktop_window.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:thermostat/Urls.dart';
@@ -33,7 +34,7 @@ class _MainAppState extends State<MainApp> {
   Map<String, List> weeklyData = {"SALON":[], "CHAMBRE":[]};
 
   late String _imageUrl;
-  String _dimensions = '800x600';
+  String _dimensions = '700x480';
 
   @override
   void initState() {
@@ -169,8 +170,14 @@ class _MainAppState extends State<MainApp> {
             Container(
               height:30,
               child:Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
+                  IconButton(
+                    onPressed: (){
+                      DesktopWindow.toggleFullScreen();
+                    },
+                    icon: Icon(Icons.fullscreen),
+                  ),
                   InkWell(
                       onTap:(){
                         this.update();
@@ -198,7 +205,7 @@ class _MainAppState extends State<MainApp> {
               ),
             ),
             Container(
-              height:280,
+              height:240,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: rooms,

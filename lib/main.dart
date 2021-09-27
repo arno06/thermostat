@@ -1,7 +1,18 @@
+import 'dart:io';
+
+import 'package:desktop_window/desktop_window.dart';
 import 'package:flutter/material.dart';
 import 'package:thermostat/widgets/MainApp.dart';
+import 'package:window_size/window_size.dart';
 
-void main() {
+void main() async {
+
+  WidgetsFlutterBinding.ensureInitialized();
+
+  if(Platform.isWindows || Platform.isMacOS || Platform.isLinux){
+    setWindowTitle('Thermostat');
+    await DesktopWindow.setFullScreen(true);
+  }
   runApp(MyApp());
 }
 
