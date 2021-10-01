@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -5,7 +6,9 @@ import 'package:desktop_window/desktop_window.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:thermostat/Urls.dart';
+import 'package:thermostat/data/Setting.dart';
 import 'package:thermostat/data/THR.dart';
+import 'package:thermostat/data/ThermostatState.dart';
 import 'package:thermostat/painters/GraphPainter.dart';
 
 import 'package:thermostat/widgets/RoomState.dart';
@@ -24,12 +27,11 @@ class _MainAppState extends State<MainApp> {
   bool disabled = true;
   bool loading = false;
 
-  int mode = 0;
-  int state = 0;
-
   int selectedIndex = 0;
 
   List<RoomState> rooms = [];
+  List<Setting> settings = [];
+  ThermostatState? currentState;
 
   Map<String, List> weeklyData = {"SALON":[], "CHAMBRE":[]};
 
@@ -40,6 +42,9 @@ class _MainAppState extends State<MainApp> {
   void initState() {
     super.initState();
     this.update();
+    Timer.periodic(const Duration(minutes: 15), (timer) {
+      this.update();
+    });
   }
 
   @override
@@ -48,14 +53,15 @@ class _MainAppState extends State<MainApp> {
     double w = MediaQuery.of(context).size.width;
     double h = MediaQuery.of(context).size.height;
     _dimensions = w.toInt().toString()+'x'+h.toInt().toString();
-    print(_dimensions);
   }
 
   void update(){
     updateTemps();
     updateWeeklyReadings();
     updateStatusInfo();
+    updateSettings();
     _generateImageUrl();
+    setState(() {});
   }
 
   tabSelectedHandler(int index){
@@ -64,12 +70,26 @@ class _MainAppState extends State<MainApp> {
     });
   }
 
+  updateSettings() async{
+    var client = http.Client();
+    var url = Uri.parse(Urls.SETTINGS);
+    var response = await client.get(url);
+    List<Map> results = (json.decode(response.body)['settings'] as List).cast<Map<String, dynamic>>().toList();
+    settings.clear();
+    results.forEach((element) {
+      settings.add(Setting.fromMap(element));
+    });
+    settings.sort((elementA, elementB){
+      return elementA.start_at.compareTo(elementB.start_at);
+    });
+  }
+
   updateStatusInfo() async{
     var client = http.Client();
     var url = Uri.parse(Urls.STATE);
     var response = await client.get(url);
     Map<String, dynamic> results = (json.decode(response.body));
-    print(results);
+    currentState = ThermostatState.fromMap(results);
   }
 
   updateTemps() async{
@@ -143,7 +163,7 @@ class _MainAppState extends State<MainApp> {
       d = h+':'+m;
     }
 
-    Widget secondary = settings();
+    Widget secondary = settingsScreen();
     switch(selectedIndex){
       case 0:
         colorRooms(false);
@@ -249,28 +269,132 @@ class _MainAppState extends State<MainApp> {
     );
   }
 
-  Widget settings(){
+  Widget settingsScreen(){
 
+    List<Widget> set = [];
+
+    settings.forEach((element){
+      var time = element.start_at;
+      time += ' - ';
+      time += element.end_at;
+      set.add(
+        InkWell(
+          onTap:(){
+            showDialog(context: context, builder: (BuildContext){
+              var val = element.temp;
+              return StatefulBuilder(builder: (context, sstate){
+                return AlertDialog(
+                  title:Center(child:Text(time)),
+                  content:Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        onPressed: (){
+                          val += 0.5;
+                          sstate((){});
+                        },
+                        iconSize: 70.0,
+                        icon: Icon(Icons.keyboard_arrow_up),
+                      ),
+                      Text(
+                        val.toString()+'°',
+                        style: TextStyle(
+                          fontSize: 40.0
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: (){
+                          val -= 0.5;
+                          sstate((){});
+                        },
+                        iconSize: 70.0,
+                        icon: Icon(Icons.keyboard_arrow_down)
+                      )
+                    ],
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: Text("Annuler"),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        setState(() {
+                          element.temp = val;
+                          element.commit();
+                        });
+                      },
+                      child: Text("Enregistrer"),
+                    ),
+                  ],
+                );
+              });
+            });
+          },
+          child: Container(
+            padding:EdgeInsets.all(10.0),
+            child: Row(
+              children: [
+                Icon(element.icon),
+                Container(width:10.0),
+                Text(time),
+                Spacer(),
+                Text(element.temp.toString()+"°"),
+              ],
+            ),
+          ),
+        )
+      );
+
+      set.add(
+        Center(
+          child: Container(
+            decoration: BoxDecoration(
+              color:Colors.black.withOpacity(.1)
+            ),
+            height:1.0,
+          ),
+        )
+      );
+    });
+
+    var mode = 0;
+    if(this.currentState != null){
+      mode = this.currentState!.mode;
+    }
+    var val = 0;
+    if(this.currentState != null){
+      val = this.currentState!.switch_val;
+    }
     return Column(
       children: [
         Row(
           children: [
-            ToggleSwitch(values: ['Automatique', 'Manuel'], value:this.mode, width: 250, height:35, onSwitch:(index, val){
+            ToggleSwitch(values: ['Automatique', 'Manuel'], value:mode, width: 250, height:35, onSwitch:(index, val){
               setState(() {
-                this.mode = index;
+                this.currentState?.mode = index;
+                this.currentState?.commit();
                 this.disabled = index==0;
               });
             }),
             Container(width:20),
-            ToggleSwitch(values: ['On', 'Off'], value:this.state, width: 125, height:35, disabled: this.disabled, onSwitch: (index, val){
-              this.state = index;
-              runRelayCommand([this.state==1?"off":"on"]);
-            },),
+            ToggleSwitch(values: ['Off', 'On'], value:val, width: 125, height:35, disabled: this.disabled, onSwitch: (index, val){
+              this.currentState?.switch_val = index;
+              this.currentState?.commit();
+              runRelayCommand([this.currentState?.switch_val==0?"off":"on"]);
+            }),
+            Spacer(),
+            Opacity(
+              opacity: currentState?.mode == "on"?1:0,
+              child:Icon(Icons.fireplace_outlined, color: Colors.green,)
+            )
           ],
         ),
-        Container(
-            height:20
-        ),
+        Container(height:10),
+        Column(
+          children: set,
+        )
       ],
     );
   }

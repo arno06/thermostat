@@ -9,7 +9,7 @@ void main() async {
 
   WidgetsFlutterBinding.ensureInitialized();
 
-  if(Platform.isWindows || Platform.isMacOS || Platform.isLinux){
+  if(Platform.isLinux){
     setWindowTitle('Thermostat');
     await DesktopWindow.setFullScreen(true);
   }
